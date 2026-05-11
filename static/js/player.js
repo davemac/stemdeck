@@ -305,13 +305,16 @@ function renderDecodedStemVisuals(stemName, audioBuffer, color) {
 }
 
 // Set the song-level "Stem Energy" panel from each stem's overall RMS.
-// Without this baseline the bars sit at 0% until the user hits play
-// (because audio.js only writes per-frame during active playback) and
+// Without this baseline the bars sit at 0% until the user hits play and
 // look like static placeholders. Normalizing all stems to the loudest
 // one's RMS gives a meaningful relative balance ("drums dominate, piano
 // quiet"), which is what a DAW-style energy panel is supposed to show.
-// Once playback starts, audio.js's per-frame writes override these
-// baseline values for real-time pulsing.
+//
+// During playback, audio.js's VU tick overwrites each bar's --v with the
+// live peak-hold level (see attachAnalysers, energyBarEl). The numeric
+// label written here is intentionally left alone by the tick, so the
+// percentage column keeps showing the song-level balance even while the
+// bar pulses to the music.
 function renderStemEnergyBaseline(stems, decodedMap) {
   const rmsByStem = new Map();
   let maxRms = 0;
