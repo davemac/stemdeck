@@ -67,13 +67,7 @@ export function attachAnalysers() {
     const data = new Uint8Array(analyser.fftSize);
     const vuEl = mixerEl.querySelector(`.lane-vu[data-stem="${stemName}"]`);
     const miniMeterEl = document.querySelector(`.stem-list .${stemName} .mini-meter`);
-    // Stem Energy widget bar (the <b> inside .energy-row). Live peak-hold
-    // pulse during playback; numeric label is left alone so the at-a-glance
-    // baseline set by renderStemEnergyBaseline() stays visible when paused.
-    const energyBarEl = document.querySelector(
-      `.energy-row[data-stem="${stemName}"] b`,
-    );
-    trackAnalysers.push({ analyser, data, vuEl, miniMeterEl, energyBarEl, peak: 0 });
+    trackAnalysers.push({ analyser, data, vuEl, miniMeterEl, peak: 0 });
   }
 
   const tick = () => {
@@ -136,11 +130,6 @@ export function attachAnalysers() {
             nextHold > 0.04 ? "1" : "0",
           );
         }
-      }
-      if (t.energyBarEl && peakPct !== t.lastPeakPct) {
-        // peakPct (peak-hold with slow decay) reads steadier than raw RMS
-        // and matches the ballistics users expect from a VU-style bar.
-        t.energyBarEl.style.setProperty("--v", `${peakPct}%`);
       }
       t.lastLevelPct = lvlPct;
       t.lastPeakPct = peakPct;

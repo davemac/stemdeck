@@ -310,9 +310,9 @@ function renderDecodedStemVisuals(stemName, audioBuffer, color) {
 // one's RMS gives a meaningful relative balance ("drums dominate, piano
 // quiet"), which is what a DAW-style energy panel is supposed to show.
 //
-// During playback, audio.js's VU tick overwrites each bar's --v with the
-// live peak-hold level (see attachAnalysers, energyBarEl). The numeric
-// label written here is intentionally left alone by the tick, so the
+// During playback, startStemVuLoop() overwrites each bar's --v with the
+// live peak-hold level (see energyBarEl wiring there). The numeric label
+// written here is intentionally left alone by that loop, so the
 // percentage column keeps showing the song-level balance even while the
 // bar pulses to the music.
 function renderStemEnergyBaseline(stems, decodedMap) {
@@ -389,13 +389,17 @@ function startStemVuLoop(stems, decodedMap, token) {
     env: buildStemVuEnvelope(decodedMap.get(stem.name)),
     miniMeterEl: document.querySelector(`.stem-list [data-stem="${stem.name}"] .mini-meter`),
     vuEl: mixerEl.querySelector(`.lane-vu[data-stem="${stem.name}"]`),
+    // Stem Energy widget bar — pulsed live alongside the lane VU. Numeric
+    // label is intentionally left to renderStemEnergyBaseline() so the
+    // song-level balance stays visible when paused.
+    energyBarEl: document.querySelector(`.energy-row[data-stem="${stem.name}"] b`),
     peak: 0,
     peakHold: 0,
     holdFrames: 0,
     lastPeakPct: -1,
     lastHoldPct: -1,
     lastLevelPct: -1,
-  })).filter((m) => m.env.length && (m.miniMeterEl || m.vuEl));
+  })).filter((m) => m.env.length && (m.miniMeterEl || m.vuEl || m.energyBarEl));
 
   if (!meters.length) return;
   const tick = () => {
@@ -439,6 +443,12 @@ function startStemVuLoop(stems, decodedMap, token) {
       if (m.vuEl) {
         if (lvlPct !== m.lastLevelPct) m.vuEl.style.setProperty("--vu-level", `${lvlPct}%`);
         if (holdPct !== m.lastHoldPct) m.vuEl.style.setProperty("--vu-peak", `${holdPct}%`);
+      }
+      if (m.energyBarEl && peakPct !== m.lastPeakPct) {
+        // peak-hold (with the 0.018/frame decay above) reads steadier than
+        // raw level on a single-bar widget and matches VU ballistics users
+        // already see on the lane meters.
+        m.energyBarEl.style.setProperty("--v", `${peakPct}%`);
       }
       m.lastLevelPct = lvlPct;
       m.lastPeakPct = peakPct;
